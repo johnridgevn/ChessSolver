@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Solver</title>
+    <style>
+        * { font-family: "PT Mono", monospace; box-sizing: border-box; }
+        body { font-family: monospace; background-color: #333; color: #fff; margin: 0; padding: 0; }
+        .container { margin-top: 50px; text-align: center; }
+        .puzzleCount { font-size: 30px; margin-bottom: 20px; }
+        .button { background-color: #555; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        .button:hover { background-color: #777; }
+        .unclickable { opacity: 0.5; pointer-events: none; }
+        .achievements { text-align: center; margin-top: 20px; }
+        .achievement {
+            display: inline-block;
+            width: 100px; /* Fixed width for square */
+            height: 100px; /* Fixed height for square */
+            margin: 15px; /* Distance between achievements */
+            background-color: #555;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: relative;
+            vertical-align: top; /* Align the achievements properly */
+        }
+        .achievement:hover {
+            background-color: #777;
+        }
+        .achievement-description {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 1;
+            top: 100%; /* Display below the achievement */
+            left: 50%; /* Align to the center of the achievement */
+            transform: translateX(-50%); /* Center horizontally */
+            width: 200px; /* Fixed width for description */
+        }
+        .achievement:hover .achievement-description {
+            display: block;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .button-container > button {
+            margin-right: 10px; /* Adjust spacing between buttons */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chess Solver</h1>
+        <div class="puzzleCount" style="font-size: 30px; margin-bottom: 20px;">You solved <span id="puzzleSolved">0</span> chess puzzles</div>
+        <div class="puzzleSolvedPerSec" style="font-size: 20px;">You are solving <span id="puzzlePerSecond">0</span> chess puzzles per second.</div>
+        <div class="button-container">
+            <button id="clickButton" class="button" onclick="incrementPuzzleCount()">Click to solve chess</button><br>
+            <button id="buyButton1" class="button unclickable" onclick="buyChess(1)">Buy Chess (Tier 1 - <span id="at1Count">0</span>)</button><br>
+            <button id="buyButton2" class="button unclickable" onclick="buyChess(2)">Buy Chess (Tier 2 - <span id="at2Count">0</span>)</button>
+        </div>
+        <div class="achievements">
+            <h2>Achievements</h2>
+            <div id="achievementsMenu"></div>
+        </div>
+    </div>
+    <script>
+        const puzzleCountElement = document.getElementById('puzzleSolved');
+        const puzzlePerSecondElement = document.getElementById('puzzlePerSecond');
+        const buyButton1 = document.getElementById('buyButton1');
+        const buyButton2 = document.getElementById('buyButton2');
+        const at1CountElement = document.getElementById('at1Count');
+        const at2CountElement = document.getElementById('at2Count');
+        const achievementsMenu = document.getElementById('achievementsMenu');
+
+        let puzzleCount = 0;
+        let puzzlePerSecond = 0;
+        let purchaseCount1 = 0;
+        let purchaseCount2 = 0;
+        let purchaseCost1 = 10;
+        let purchaseCost2 = 100;
+        let achievements = [];
+
+        setInterval(() => {
+            puzzlePerSecond = Math.round(Math.pow(purchaseCount1, 1.5));
+            puzzleCount += puzzlePerSecond;
+            puzzleCountElement.textContent = puzzleCount;
+            puzzlePerSecondElement.textContent = Math.round(puzzlePerSecond);
+            updateBuyButtonState();
+        }, 1000);
+
+        function incrementPuzzleCount() {
+            puzzleCount++;
+            checkAchievements();
+            puzzleCountElement.textContent = puzzleCount;
+            updateBuyButtonState();
+        }
+
+        function buyChess(tier) {
+            let purchaseCount, purchaseCost;
+            if (tier === 1) {
+                purchaseCount = purchaseCount1;
+                purchaseCost = purchaseCost1;
+            } else if (tier === 2) {
+                purchaseCount = purchaseCount2;
+                purchaseCost = purchaseCost2;
+            }
+
+            if (puzzleCount >= purchaseCost) {
+                puzzleCount -= purchaseCost;
+                if (purchaseCount === 0) {
+                    puzzlePerSecond += 1;
+                } else {
+                    puzzlePerSecond += Math.round((purchaseCount) * 1.5);
+                }
+                if (tier === 1) {
+                    purchaseCount1++;
+                    at1CountElement.textContent = purchaseCount1;
+                    if (purchaseCount1 % 10 === 0) {
+                        purchaseCost1 *= 100;
+                    }
+                } else if (tier === 2) {
+                    purchaseCount2++;
+                    at2CountElement.textContent = purchaseCount2;
+                    if (purchaseCount2 % 10 === 0) {
+                        purchaseCost2 *= 1000;
+                    }
+                }
+                puzzleCountElement.textContent = puzzleCount; // Update puzzle count immediately after purchase
+                puzzlePerSecondElement.textContent = Math.round(puzzlePerSecond);
+                updateBuyButtonState();
+                updateBuyButtonText();
+            }
+        }
+
+        function updateBuyButtonState() {
+            if (puzzleCount >= purchaseCost1) {
+                buyButton1.classList.remove('unclickable');
+            } else {
+                buyButton1.classList.add('unclickable');
+            }
+            if (puzzleCount >= purchaseCost2) {
+                buyButton2.classList.remove('unclickable');
+            } else {
+                buyButton2.classList.add('unclickable');
+            }
+        }
+
+        function updateBuyButtonText() {
+            buyButton1.textContent = "Buy Chess (Tier 1 - " + purchaseCost1 + ")";
+            buyButton2.textContent = "Buy Chess (Tier 2 - " + purchaseCost2 + ")";
+        }
+
+        function checkAchievements() {
+            if (puzzleCount >= 10 && !achievements.includes("Ten Puzzles Solved")) {
+                achievements.push("Ten Puzzles Solved");
+                displayAchievement("Ten Puzzles Solved", "Solve 10 puzzles");
+            }
+            if (puzzlePerSecond >= 5 && !achievements.includes("Speedy Solver")) {
+                achievements.push("Speedy Solver");
+                displayAchievement("Speedy Solver", "Solve 5 puzzles per second.");
+            }
+            if (purchaseCount1 >= 10 && !achievements.includes("First upgrade")) {
+                achievements.push("First upgrade");
+                displayAchievement("First upgrade", "Purchase AT1 10 times");
+            }
+            if (purchaseCount2 >= 10 && !achievements.includes("Second upgrade")) {
+                achievements.push("Second upgrade");
+                displayAchievement("Second upgrade", "Purchase AT2 10 times"); 
+            }
+            if (Math.random() <= 0.01 && !achievements.includes("Ooooh pretty lucky")) {
+                achievements.push("Ooooh pretty lucky");
+                displayAchievement("Ooooh pretty lucky", "You have a 1/100 chance to get this achievement every second!");
+            }
+            if (puzzleCount >= Number.MAX_SAFE_INTEGER && !achievements.includes("STACK OVERFLOW")) {
+                achievements.push("STACK OVERFLOW");
+                displayAchievement("STACK OVERFLOW", "Solve 9007199254740991(2^53-1) puzzles");
+            }
+            if (puzzleCount >= (Number.MAX_SAFE_INTEGER * 2) && !achievements.includes("STACK DOUBLEFLOW")) {
+                achievements.push("STACK DOUBLEFLOW");
+                displayAchievement("STACK DOUBLEFLOW", "Solve 18014398509481982((2^53-1)*2) puzzles");
+            }
+            if (puzzleCount >= (Number.MAX_SAFE_INTEGER * 3) && !achievements.includes("STACK... oh nvm")) {
+                achievements.push("STACK... oh nvm");
+                displayAchievement("STACK DOUBLEFLOW", "Solve more than 27021597764222973 puzzles");
+            }
+            if (puzzleCount >= Number.MAX_VALUE && !achievements.includes("YOU BREAK THE FOURTH WALL")) {
+                achievements.push("YOU BREAK THE FOURTH WALL");
+                displayAchievement("YOU BREAK THE FOURTH WALL", "Solve 2^1024(~1.79e308) puzzle");
+            }
+        }
+
+        function displayAchievement(achievement, description) {
+            const achievementElement = document.createElement('div');
+            achievementElement.classList.add('achievement');
+            achievementElement.textContent = achievement;
+            achievementElement.setAttribute('title', description);
+            achievementsMenu.appendChild(achievementElement);
+
+            const descriptionElement = document.createElement('div');
+            descriptionElement.classList.add('achievement-description');
+            descriptionElement.textContent = description;
+            achievementElement.appendChild(descriptionElement);
+        }
+    </script>
+</body>
+</html>
